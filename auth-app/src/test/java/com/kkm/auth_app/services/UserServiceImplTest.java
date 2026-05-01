@@ -2,6 +2,7 @@ package com.kkm.auth_app.services;
 
 import com.kkm.auth_app.dto.UserDto;
 import com.kkm.auth_app.entities.User;
+import com.kkm.auth_app.exception.ResourceNotFoundException;
 import com.kkm.auth_app.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,6 +78,36 @@ public class UserServiceImplTest {
         verify(repository, times(1)).existsByEmail(dto.getEmail());
         verify(repository, never()).save(any());
     }
+
+    @Test
+    void testGetUserByEmail_success(){
+       String email = "kkm@gmail.com";
+       User user = User.builder()
+               .id(UUID.randomUUID())
+               .email(email)
+               .build();
+       when(repository.findByEmail(email)).thenReturn(Optional.of(user));
+       UserDto result = userService.getUserByEmail(email);
+
+       assertNotNull(result);
+       assertEquals(email, result.getEmail());
+
+    }
+
+    @Test
+    void testGetUserByEmail_notFound(){
+        String email = "kkmandal@gmail.com";
+        when(repository.findByEmail(email)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                ()->userService.getUserByEmail(email)
+        );
+
+        assertEquals("Resource Not Found with given email id",exception.getMessage());
+    }
+
+
 
 
 
