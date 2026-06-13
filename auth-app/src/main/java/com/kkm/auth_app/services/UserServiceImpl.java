@@ -29,7 +29,7 @@ public class UserServiceImpl implements UserService{
     public UserDto register(UserDto userDto) {
         log.info("User registration started for email: {}",userDto.getEmail());
         if(userDto.getEmail() == null || userDto.getEmail().isBlank()){
-            log.warn("Registration failed: email is empty");
+            log.warn("Registration fail: email is empty");
             throw new IllegalArgumentException("Email is required");
         }
         if(userRepository.existsByEmail(userDto.getEmail())){
