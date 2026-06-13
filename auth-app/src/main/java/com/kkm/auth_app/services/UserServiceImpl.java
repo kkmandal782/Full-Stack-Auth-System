@@ -9,6 +9,8 @@ import com.kkm.auth_app.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,14 +22,18 @@ public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Override
     @Transactional
     public UserDto register(UserDto userDto) {
+        log.info("User registration started for email: {}",userDto.getEmail());
         if(userDto.getEmail() == null || userDto.getEmail().isBlank()){
+            log.warn("Registration failed: email is empty");
             throw new IllegalArgumentException("Email is required");
         }
         if(userRepository.existsByEmail(userDto.getEmail())){
+            log.warn("Registration failed: email already exists {}", userDto.getEmail());
             throw new IllegalArgumentException("Email already exists");
         }
 
@@ -37,13 +43,14 @@ public class UserServiceImpl implements UserService{
         //TODO: role assign here to user for authorization.
 
         User savedUser = userRepository.save(user);
+        log.info("User registered successfully with id: {}",savedUser.getId());
         return modelMapper.map(savedUser, UserDto.class);
     }
 
     @Override
     public UserDto getUserByEmail(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(()->
-            new ResourceNotFoundException("Resource Not Found with given email id")
+                new ResourceNotFoundException("Resource Not Found with given email id")
         );
         return modelMapper.map(user, UserDto.class);
     }
@@ -54,15 +61,15 @@ public class UserServiceImpl implements UserService{
         User existingUser = userRepository
                 .findById(uid)
                 .orElseThrow(()->new ResourceNotFoundException("Resource Not Found with given User id"));
-       //Update process:::::::
-       if(userDto.getName()!=null) existingUser.setName(userDto.getName());
-       if(userDto.getImage() != null) existingUser.setImage(userDto.getImage());
-       if(userDto.getProvider()!= null) existingUser.setProvider(userDto.getProvider());
-       if(userDto.getPassword() != null) existingUser.setPassword(userDto.getPassword());
-       existingUser.setEnabled(userDto.isEnabled());
-       existingUser.setUpdatedAt(Instant.now());
-       User updatedUser = userRepository.save(existingUser);
-       return modelMapper.map(updatedUser, UserDto.class);
+        //Update process:::::::
+        if(userDto.getName()!=null) existingUser.setName(userDto.getName());
+        if(userDto.getImage() != null) existingUser.setImage(userDto.getImage());
+        if(userDto.getProvider()!= null) existingUser.setProvider(userDto.getProvider());
+        if(userDto.getPassword() != null) existingUser.setPassword(userDto.getPassword());
+        existingUser.setEnabled(userDto.isEnabled());
+        existingUser.setUpdatedAt(Instant.now());
+        User updatedUser = userRepository.save(existingUser);
+        return modelMapper.map(updatedUser, UserDto.class);
     }
 
     @Override
